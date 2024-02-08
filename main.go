@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -49,6 +50,7 @@ func init() {
 }
 
 func main() {
+	fmt.Print("\n\n\n")
 	router := chi.NewRouter()
 
 	router.Use(cors.Handler(cors.Options{
@@ -70,6 +72,6 @@ func main() {
 		Handler: router,
 	}
 
-	log.Printf("Serving on port: %v\n", port)
+	log.Printf("Serving on port: %v...\n\n\n\n", port)
 	log.Fatal(srv.ListenAndServe())
 }

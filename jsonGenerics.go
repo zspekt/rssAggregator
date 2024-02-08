@@ -2,17 +2,20 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"log"
 	"net/http"
 )
 
 func respondWithError(w http.ResponseWriter, code int, msg string) {
+	fmt.Print("\n\n\n")
 	log.Printf("Responding with error code -> %v and the following message:\n\t%v", code, msg)
 	respondWithJSON(w, code, msg)
 }
 
 func respondWithJSON(w http.ResponseWriter, code int, payload interface{}) {
+	fmt.Print("\n\n\n")
 	log.Printf("Responding with code -> %v and provided payload...\n", code)
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(code)

@@ -65,7 +65,9 @@ func main() {
 
 	v1.HandleFunc("/readiness", readinessHandler)
 	v1.HandleFunc("/err", errorHandler)
-	v1.HandleFunc("/users", usersCreateHandler)
+
+	v1.Post("/users", usersCreateHandler)
+	v1.Get("/users", usersGetByApiKey)
 
 	srv := &http.Server{
 		Addr:    ":" + port,

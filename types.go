@@ -17,3 +17,7 @@ type apiConfig struct {
 type decodeUserPost struct {
 	Name string `json:"name"`
 }
+
+type decodeUserGet struct {
+	ApiKey string `json:"api_key"`
+}

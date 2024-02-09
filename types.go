@@ -35,3 +35,8 @@ type decodeFeedPost struct {
 type decodeFeedFlPost struct {
 	FeedId uuid.UUID `json:"feed_id"`
 }
+
+type createFeedResp struct {
+	Feed       database.Feed       `json:"feed"`
+	FeedFollow database.Feedfollow `json:"feed_follow"`
+}

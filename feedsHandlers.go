@@ -97,10 +97,15 @@ func feedsCreateHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var slice []interface{} = make([]interface{}, 2)
-	slice[0] = newFeed
-	slice[1] = newFeedFollow
+	// var slice []interface{} = make([]interface{}, 2)
+	// slice[0] = newFeed
+	// slice[1] = newFeedFollow
 
-	respondWithJSON(w, 200, slice)
+	resp := createFeedResp{
+		Feed:       newFeed,
+		FeedFollow: newFeedFollow,
+	}
+
+	respondWithJSON(w, 200, resp)
 	log.Println("feedsCreateHandler exited without any errors...")
 }

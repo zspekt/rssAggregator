@@ -66,7 +66,7 @@ func usersGetByApiKey(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userResp, err = db.GetByApiKey(r.Context(), apiKey)
+	userResp, err = db.GetAllByApiKey(r.Context(), apiKey)
 	if err != nil {
 		log.Fatalf("DB error on usersGetByApiKey while trying to select user -> %v\n", err)
 		return

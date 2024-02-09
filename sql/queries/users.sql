@@ -4,9 +4,17 @@ INSERT INTO users (id, created_at, updated_at, name, apikey)
 RETURNING
     *;
 
--- name: GetByApiKey :one
+-- name: GetAllByApiKey :one
 SELECT
     *
+FROM
+    users
+WHERE
+    apikey = $1;
+
+-- name: GetIdByApiKey :one
+SELECT
+    id
 FROM
     users
 WHERE

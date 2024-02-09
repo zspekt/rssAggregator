@@ -21,3 +21,8 @@ type decodeUserPost struct {
 type decodeUserGet struct {
 	ApiKey string `json:"api_key"`
 }
+
+type decodeFeedPost struct {
+	Name string `json:"name"`
+	Url  string `json:"url"`
+}

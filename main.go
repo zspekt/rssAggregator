@@ -69,6 +69,8 @@ func main() {
 	v1.Post("/users", usersCreateHandler)
 	v1.Get("/users", usersGetByApiKey)
 
+	v1.Post("/rssadd", feedsCreateHandler)
+
 	srv := &http.Server{
 		Addr:    ":" + port,
 		Handler: router,

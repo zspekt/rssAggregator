@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 
 	"github.com/zspekt/rssAggregator/internal/database"
@@ -65,3 +66,37 @@ func feedFlPostHandler(w http.ResponseWriter, r *http.Request) {
 	respondWithJSON(w, 200, feedFollow)
 	log.Println("feedFlPostHandler exited without any errors...")
 }
+
+func feedFlDeleteHandler(w http.ResponseWriter, r *http.Request) {
+	fmt.Print("\n\n\n")
+	log.Println("RUNNING feedFlDeleteHandler...")
+
+	// hold the database connection
+	db := apiCfg.DB
+
+	feedFlId := chi.URLParam(r, "*")
+	if feedFlId == "" {
+		log.Printf(
+			"Error getting feedFlId from URL in feedFlDeleteHandler func")
+		respondWithError(w, 400, "missing url param")
+		return
+	}
+
+	uuid := uuid.MustParse(feedFlId)
+
+	log.Printf("feedFlId <%v>\n", uuid)
+
+	err := db.DeleteFeedFollow(r.Context(), uuid)
+	if err != nil {
+		log.Printf(
+			"Error deleting feed follow in feedFlDeleteHandler func --> %v\n",
+			err,
+		)
+	}
+
+	respondWithJSON(w, 200, "")
+}
+
+// write something to get param id from the url for chi
+// id := chi.URLParam(r, "id")
+// log.Println("id: ", id)

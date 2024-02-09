@@ -6,8 +6,7 @@ RETURNING
 
 -- name: DeleteFeedFollow :exec
 DELETE FROM feedfollow
-WHERE feed_id = $1
-    AND user_id = $2;
+WHERE id = $1;
 
 -- name: GetFeedFollowsByUser :many
 SELECT

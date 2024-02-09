@@ -82,6 +82,25 @@ func feedsCreateHandler(w http.ResponseWriter, r *http.Request) {
 		log.Fatalf("DB error on feedsCreateHandler while trying to create user -> %v\n", err)
 	}
 
+	arg := database.CreateFeedFollowParams{
+		ID:        uuid.New(),
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+		FeedID:    newFeed.ID,
+		UserID:    userUUID,
+	}
+
+	newFeedFollow, err := db.CreateFeedFollow(r.Context(), arg)
+	if err != nil {
+		log.Printf("DB error on feedsCreateHandler while trying to create feed follow -> %v\n", err)
+		respondWithError(w, 500, err.Error())
+		return
+	}
+
+	var slice []interface{} = make([]interface{}, 2)
+	slice[0] = newFeed
+	slice[1] = newFeedFollow
+
 	respondWithJSON(w, 200, newFeed)
 	log.Println("feedsCreateHandler exited without any errors...")
 }

@@ -73,9 +73,7 @@ func main() {
 	v1.Get("/rssfeeds", feedsGetAllHandler)
 
 	v1.Post("/feed_follows", feedFlPostHandler)
-
 	v1.Delete("/feed_follows/*", feedFlDeleteHandler)
-
 	v1.Get("/feed_follows", feedsGetByUserHandler)
 
 	srv := &http.Server{

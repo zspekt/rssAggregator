@@ -72,6 +72,8 @@ func main() {
 	v1.Post("/rssadd", feedsCreateHandler)
 	v1.Get("/rssfeeds", feedsGetAllHandler)
 
+	v1.Post("/feed_follows", feedFlPostHandler)
+
 	srv := &http.Server{
 		Addr:    ":" + port,
 		Handler: router,

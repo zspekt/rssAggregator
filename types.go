@@ -1,6 +1,10 @@
 package main
 
-import "github.com/zspekt/rssAggregator/internal/database"
+import (
+	"github.com/google/uuid"
+
+	"github.com/zspekt/rssAggregator/internal/database"
+)
 
 type readinessResp struct {
 	Status string `json:"status"`
@@ -25,4 +29,9 @@ type decodeUserGet struct {
 type decodeFeedPost struct {
 	Name string `json:"name"`
 	Url  string `json:"url"`
+}
+
+// we get the user id from the apikey
+type decodeFeedFlPost struct {
+	FeedId uuid.UUID `json:"feed_id"`
 }

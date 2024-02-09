@@ -1,6 +1,7 @@
 package main
 
 import (
+	"database/sql"
 	"fmt"
 	"log"
 	"net/http"
@@ -109,3 +110,47 @@ func feedsCreateHandler(w http.ResponseWriter, r *http.Request) {
 	respondWithJSON(w, 200, resp)
 	log.Println("feedsCreateHandler exited without any errors...")
 }
+
+func markFeedFetchedTest(w http.ResponseWriter, r *http.Request) {
+	fmt.Print("\n\n\n")
+	log.Println("RUNNING test...")
+
+	db := apiCfg.DB
+
+	uuid := uuid.MustParse("cc98dc36-2a07-42b9-882e-84c3df02619f")
+
+	time := sql.NullTime{
+		Time:  time.Now(),
+		Valid: true,
+	}
+
+	arg := database.MarkFeedFetchedParams{
+		LastFetchedAt: time,
+		ID:            uuid,
+	}
+
+	err := db.MarkFeedFetched(r.Context(), arg)
+	if err != nil {
+		log.Printf(
+			"Error marking feed as fetched in markFeedFetchedTest func --> %v\n",
+			err)
+	}
+
+	respondWithJSON(w, 200, "no errs")
+	log.Println("test exited without any errors...")
+}
+
+// cc98dc36-2a07-42b9-882e-84c3df02619f
+
+/*
+
+
+
+
+
+
+
+
+
+
+ */

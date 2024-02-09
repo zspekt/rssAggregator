@@ -101,6 +101,6 @@ func feedsCreateHandler(w http.ResponseWriter, r *http.Request) {
 	slice[0] = newFeed
 	slice[1] = newFeedFollow
 
-	respondWithJSON(w, 200, newFeed)
+	respondWithJSON(w, 200, slice)
 	log.Println("feedsCreateHandler exited without any errors...")
 }

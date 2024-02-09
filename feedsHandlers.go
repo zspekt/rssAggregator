@@ -11,6 +11,27 @@ import (
 	"github.com/zspekt/rssAggregator/internal/database"
 )
 
+func feedsGetAllHandler(w http.ResponseWriter, r *http.Request) {
+	fmt.Print("\n\n\n")
+	log.Println("RUNNING feedsGetAllHandler...")
+
+	var (
+		db        *database.Queries = apiCfg.DB
+		feedSlice []database.Feed   = make([]database.Feed, 0)
+	)
+
+	feedSlice, err := db.GetAllFeeds(r.Context())
+	if err != nil {
+		log.Printf(
+			"Error getting all feeds from database during feedsGetAllHandler func --> %v\n",
+			err,
+		)
+	}
+
+	respondWithJSON(w, 200, feedSlice)
+	log.Println("feedsGetAllHandler exited without any errors...")
+}
+
 func feedsCreateHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Print("\n\n\n")
 	log.Println("RUNNING feedsCreateHandler...")

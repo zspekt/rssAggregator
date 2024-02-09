@@ -70,6 +70,7 @@ func main() {
 	v1.Get("/users", usersGetByApiKey)
 
 	v1.Post("/rssadd", feedsCreateHandler)
+	v1.Get("/rssfeeds", feedsGetAllHandler)
 
 	srv := &http.Server{
 		Addr:    ":" + port,

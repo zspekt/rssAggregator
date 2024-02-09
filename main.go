@@ -76,6 +76,8 @@ func main() {
 
 	v1.Delete("/feed_follows/*", feedFlDeleteHandler)
 
+	v1.Get("/feed_follows", feedsGetByUserHandler)
+
 	srv := &http.Server{
 		Addr:    ":" + port,
 		Handler: router,

@@ -97,6 +97,41 @@ func feedFlDeleteHandler(w http.ResponseWriter, r *http.Request) {
 	respondWithJSON(w, 200, "")
 }
 
-// write something to get param id from the url for chi
-// id := chi.URLParam(r, "id")
-// log.Println("id: ", id)
+func feedsGetByUserHandler(w http.ResponseWriter, r *http.Request) {
+	fmt.Print("\n\n\n")
+	log.Println("RUNNING feedsGetAllByUserHandler...")
+
+	db := apiCfg.DB
+	apiKey, err := GetApiKeyFromHeader(r)
+	if err != nil {
+		log.Printf(
+			"Error getting token from header in feedsGetAllByUserHandler func --> %v\n",
+			err,
+		)
+		respondWithError(w, 400, err.Error())
+		return
+	}
+
+	userID, err := db.GetIdByApiKey(r.Context(), apiKey)
+	if err != nil {
+		log.Printf(
+			"Error getting user id from api key in feedsGetAllByUserHandler func --> %v\n",
+			err,
+		)
+		respondWithError(w, 400, err.Error())
+		return
+	}
+
+	feedSlice, err := db.GetFeedFollowsByUser(r.Context(), userID)
+	if err != nil {
+		log.Printf(
+			"Error getting feeds by user id in feedsGetAllByUserHandler func --> %v\n",
+			err,
+		)
+		respondWithError(w, 400, err.Error())
+		return
+	}
+
+	respondWithJSON(w, 200, feedSlice)
+	log.Println("feedsGetAllByUserHandler exited without any errors...")
+}

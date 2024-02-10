@@ -1,6 +1,8 @@
 package main
 
 import (
+	"time"
+
 	"github.com/google/uuid"
 
 	"github.com/zspekt/rssAggregator/internal/database"
@@ -39,4 +41,15 @@ type decodeFeedFlPost struct {
 type createFeedResp struct {
 	Feed       database.Feed       `json:"feed"`
 	FeedFollow database.Feedfollow `json:"feed_follow"`
+}
+
+type getPostsByUserResp struct {
+	ID          uuid.UUID
+	CreatedAt   time.Time
+	UpdatedAt   time.Time
+	Title       string
+	Url         string
+	Description string
+	PublishedAt time.Time
+	FeedID      uuid.UUID
 }

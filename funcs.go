@@ -1,3 +1,16 @@
+/*
+current possible bug:
+  there is nothing preventing multiple bad urls from flooding the db.
+  considering we only fetch a predetemined amount of feeds at once, and nulls
+  come first, with enough of these bad rss feeds, it would really slow down the
+  fetching, even to a halt, given enough feeds.
+
+fix part 1: regexp to make sure at least the format of the url is valid
+
+    part 2: new columns on database. 1 to track the amount of times we have been
+            unable to fetch them,    1 to flag it after a certain amount of tries
+*/
+
 package main
 
 import (
@@ -9,6 +22,8 @@ import (
 	"net/http"
 	"sync"
 	"time"
+
+	"github.com/google/uuid"
 
 	"github.com/zspekt/rssAggregator/internal/database"
 	"github.com/zspekt/rssAggregator/internal/xmldecoding"
@@ -76,17 +91,75 @@ func processRss(feed database.Feed, wg *sync.WaitGroup) error {
 		return err
 	}
 
-	time := sql.NullTime{
+	time1 := sql.NullTime{
 		Time:  time.Now(),
 		Valid: true,
 	}
 
 	arg := database.MarkFeedFetchedParams{
-		LastFetchedAt: time,
+		LastFetchedAt: time1,
 		ID:            feed.ID,
 	}
-
 	db.MarkFeedFetched(context.Background(), arg)
+
+	// initializing some args for the creation of the post
+	var (
+		arg2        database.CreatePostParams
+		time2       time.Time
+		description sql.NullString
+	)
+
+	for _, item := range rssStruct.Channel.Item {
+		time2, err = time.Parse("Mon, 02 Jan 2006 15:04:05 GMT", item.PubDate)
+		if err != nil {
+			log.Printf("Error parsing time from rss item -> %v\n", err)
+			return err
+		}
+
+		if item.Description == "" {
+			description = sql.NullString{
+				String: "",
+				Valid:  false,
+			}
+		} else {
+			description = sql.NullString{
+				String: item.Description,
+				Valid:  true,
+			}
+		}
+
+		arg2 = database.CreatePostParams{
+			ID:          uuid.New(),
+			CreatedAt:   time.Now(),
+			Title:       item.Title,
+			Url:         item.Link,
+			Description: description,
+			PublishedAt: time2,
+			FeedID:      feed.ID,
+		}
+
+		db.CreatePost(context.Background(), arg2)
+	}
+
+	// arg = database.CreatePostParams{
+	// 	ID:          uuid.New(),
+	// 	CreatedAt:   time.Now(),
+	// 	Title:
+	// 	Url:         "",
+	// 	Description: sql.NullString{},
+	// 	PublishedAt: time.Time{},
+	// 	FeedID:      [16]byte{},
+	// }
+
+	// Item          []struct {
+	// 	Text        string `xml:",chardata"`
+	// 	Title       string `xml:"title"`
+	// 	Link        string `xml:"link"`
+	// 	PubDate     string `xml:"pubDate"`
+	// 	Guid        string `xml:"guid"`
+	// 	Description string `xml:"description"`
+	// } `xml:"item"`
+
 	log.Printf("RSS <%v>\n", rssStruct.Channel.Title)
 	log.Println("Go routine finished...")
 	return nil
@@ -96,7 +169,7 @@ func endlessFetching(context context.Context) {
 	fmt.Print("\n\n\n")
 	log.Printf("Running endless fetching...")
 
-	const interval = 20 * time.Second
+	const interval = 60 * time.Second
 
 	var (
 		db                      = apiCfg.DB

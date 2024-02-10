@@ -79,6 +79,8 @@ func main() {
 
 	v1.Post("/test", markFeedFetchedTest)
 
+	v1.Get("/posts", getPostsByUser)
+
 	ctx := context.Background()
 
 	go endlessFetching(ctx)

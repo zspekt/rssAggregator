@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"log"
@@ -77,6 +78,10 @@ func main() {
 	v1.Get("/feed_follows", feedsGetByUserHandler)
 
 	v1.Post("/test", markFeedFetchedTest)
+
+	ctx := context.Background()
+
+	go endlessFetching(ctx)
 
 	srv := &http.Server{
 		Addr:    ":" + port,

@@ -19,6 +19,15 @@ ORDER BY
     last_fetched_at ASC NULLS FIRST
 LIMIT $1;
 
+-- name: GetNextUrlsToFetch :many
+SELECT
+    url
+FROM
+    feeds
+ORDER BY
+    last_fetched_at ASC NULLS FIRST
+LIMIT $1;
+
 -- name: MarkFeedFetched :exec
 UPDATE
     feeds

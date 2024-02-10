@@ -130,6 +130,39 @@ func (q *Queries) GetNextFeedsToFetch(ctx context.Context, limit int32) ([]Feed,
 	return items, nil
 }
 
+const getNextUrlsToFetch = `-- name: GetNextUrlsToFetch :many
+SELECT
+    url
+FROM
+    feeds
+ORDER BY
+    last_fetched_at ASC NULLS FIRST
+LIMIT $1
+`
+
+func (q *Queries) GetNextUrlsToFetch(ctx context.Context, limit int32) ([]string, error) {
+	rows, err := q.db.QueryContext(ctx, getNextUrlsToFetch, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []string
+	for rows.Next() {
+		var url string
+		if err := rows.Scan(&url); err != nil {
+			return nil, err
+		}
+		items = append(items, url)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const markFeedFetched = `-- name: MarkFeedFetched :exec
 UPDATE
     feeds

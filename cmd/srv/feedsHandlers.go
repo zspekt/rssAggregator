@@ -1,10 +1,10 @@
 package main
 
 import (
-	"database/sql"
 	"fmt"
 	"log"
 	"net/http"
+	"net/url"
 	"time"
 
 	"github.com/google/uuid"
@@ -29,8 +29,8 @@ func feedsGetAllHandler(w http.ResponseWriter, r *http.Request) {
 			err,
 		)
 	}
-
 	jsongenerics.RespondWithJSON(w, 200, feedSlice)
+
 	log.Println("feedsGetAllHandler exited without any errors...")
 }
 
@@ -43,16 +43,23 @@ func feedsCreateHandler(w http.ResponseWriter, r *http.Request) {
 		db = apiCfg.DB
 		// struct to decode the http request's body
 		feedPostReq = decodeFeedPost{}
+		user        database.User
 	)
 
-	apiKey, err := GetApiKeyFromHeader(r)
+	userPtr, ok := r.Context().Value("user").(*database.User)
+	if !ok {
+		jsongenerics.RespondWithError(w, 400, "Unauthorized access")
+		return
+	}
+	user = *userPtr
+
+	jsongenerics.DecodeJson(r.Body, &feedPostReq)
+
+	_, err := url.ParseRequestURI(feedPostReq.Url)
 	if err != nil {
-		log.Println("Error getting token from header on feedsCreateHandler func -> %v\n", err)
 		jsongenerics.RespondWithError(w, 400, err.Error())
 		return
 	}
-
-	jsongenerics.DecodeJson(r.Body, &feedPostReq)
 
 	log.Printf("name field  <%v>\turl field  <%v>\n", feedPostReq.Name, feedPostReq.Url)
 
@@ -62,12 +69,6 @@ func feedsCreateHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userUUID, err := db.GetIdByApiKey(r.Context(), apiKey)
-	if err != nil {
-		log.Println("Error getting userUUID from DB on feedsCreateHandler func -> %v\n", err)
-		jsongenerics.RespondWithError(w, 500, err.Error())
-	}
-
 	// params that will be used to run the CreateUser query
 	newFeedParams := database.CreateFeedParams{
 		ID:        uuid.New(),
@@ -75,13 +76,15 @@ func feedsCreateHandler(w http.ResponseWriter, r *http.Request) {
 		UpdatedAt: time.Now(),
 		Name:      feedPostReq.Name,
 		Url:       feedPostReq.Url,
-		UserID:    userUUID,
+		UserID:    user.ID,
 	}
 
 	// creates users and returns so we can respond to the http.req with it
 	newFeed, err := db.CreateFeed(r.Context(), newFeedParams)
 	if err != nil {
-		log.Fatalf("DB error on feedsCreateHandler while trying to create user -> %v\n", err)
+		log.Printf("DB error on feedsCreateHandler while trying to create user -> %v\n", err)
+		jsongenerics.RespondWithError(w, 400, err.Error())
+		return
 	}
 
 	arg := database.CreateFeedFollowParams{
@@ -89,7 +92,7 @@ func feedsCreateHandler(w http.ResponseWriter, r *http.Request) {
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
 		FeedID:    newFeed.ID,
-		UserID:    userUUID,
+		UserID:    user.ID,
 	}
 
 	newFeedFollow, err := db.CreateFeedFollow(r.Context(), arg)
@@ -98,10 +101,6 @@ func feedsCreateHandler(w http.ResponseWriter, r *http.Request) {
 		jsongenerics.RespondWithError(w, 500, err.Error())
 		return
 	}
-
-	// var slice []interface{} = make([]interface{}, 2)
-	// slice[0] = newFeed
-	// slice[1] = newFeedFollow
 
 	resp := createFeedResp{
 		Feed:       newFeed,
@@ -112,46 +111,31 @@ func feedsCreateHandler(w http.ResponseWriter, r *http.Request) {
 	log.Println("feedsCreateHandler exited without any errors...")
 }
 
-func markFeedFetchedTest(w http.ResponseWriter, r *http.Request) {
-	fmt.Print("\n\n\n")
-	log.Println("RUNNING test...")
-
-	db := apiCfg.DB
-
-	uuid := uuid.MustParse("cc98dc36-2a07-42b9-882e-84c3df02619f")
-
-	time := sql.NullTime{
-		Time:  time.Now(),
-		Valid: true,
-	}
-
-	arg := database.MarkFeedFetchedParams{
-		LastFetchedAt: time,
-		ID:            uuid,
-	}
-
-	err := db.MarkFeedFetched(r.Context(), arg)
-	if err != nil {
-		log.Printf(
-			"Error marking feed as fetched in markFeedFetchedTest func --> %v\n",
-			err)
-	}
-
-	jsongenerics.RespondWithJSON(w, 200, "no errs")
-	log.Println("test exited without any errors...")
-}
-
-// cc98dc36-2a07-42b9-882e-84c3df02619f
-
-/*
-
-
-
-
-
-
-
-
-
-
- */
+// func markFeedFetchedTest(w http.ResponseWriter, r *http.Request) {
+// 	fmt.Print("\n\n\n")
+// 	log.Println("RUNNING test...")
+//
+// 	db := apiCfg.DB
+//
+// 	uuid := uuid.MustParse("cc98dc36-2a07-42b9-882e-84c3df02619f")
+//
+// 	time := sql.NullTime{
+// 		Time:  time.Now(),
+// 		Valid: true,
+// 	}
+//
+// 	arg := database.MarkFeedFetchedParams{
+// 		LastFetchedAt: time,
+// 		ID:            uuid,
+// 	}
+//
+// 	err := db.MarkFeedFetched(r.Context(), arg)
+// 	if err != nil {
+// 		log.Printf(
+// 			"Error marking feed as fetched in markFeedFetchedTest func --> %v\n",
+// 			err)
+// 	}
+//
+// 	jsongenerics.RespondWithJSON(w, 200, "no errs")
+// 	log.Println("test exited without any errors...")
+// }

@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/cors"
@@ -33,7 +34,7 @@ func init() {
 	port = os.Getenv("PORT")
 	log.Println("port var has been set...")
 
-	dbURL := os.Getenv("dbConn")
+	dbURL = os.Getenv("dbConn")
 	log.Println("dbURL var has been set...")
 
 	db, err = sql.Open("postgres", dbURL)
@@ -56,33 +57,41 @@ func main() {
 
 	router.Use(cors.Handler(cors.Options{
 		AllowedOrigins: []string{"http://localhost"},
-		AllowedMethods: []string{"GET", "POST"},
+		AllowedMethods: []string{"GET", "POST", "DELETE"},
 		AllowedHeaders: []string{"Content-Type"},
 		MaxAge:         300,
 	}))
+	router.Use(secMiddleware)
 
+	// endpoints that don't require auth
 	v1 := chi.NewRouter()
 	router.Mount("/api/v1", v1)
+
+	// endpoinds that do
+	v1Authd := chi.NewRouter()
+	v1Authd.Use(authMiddleware)
+	v1.Mount("/", v1Authd)
 
 	v1.HandleFunc("/readiness", readinessHandler)
 	v1.HandleFunc("/err", errorHandler)
 
+	// users
 	v1.Post("/users", usersCreateHandler)
-	v1.Get("/users", usersGetByApiKey)
+	v1Authd.Get("/users", usersGetByApiKey)
 
-	v1.Post("/rssadd", feedsCreateHandler)
+	// feeds
+	v1Authd.Post("/rssadd", feedsCreateHandler)
 	v1.Get("/rssfeeds", feedsGetAllHandler)
 
-	v1.Post("/feed_follows", feedFlPostHandler)
-	v1.Delete("/feed_follows/*", feedFlDeleteHandler)
-	v1.Get("/feed_follows", feedsGetByUserHandler)
+	// feed follows
+	v1Authd.Post("/feed_follows", feedFlPostHandler)
+	v1Authd.Delete("/feed_follows/*", feedFlDeleteHandler)
+	v1Authd.Get("/feed_follows", feedsGetByUserHandler)
 
-	v1.Post("/test", markFeedFetchedTest)
-
-	v1.Get("/posts", getPostsByUser)
+	// posts
+	v1Authd.Get("/posts", getPostsByUser)
 
 	ctx := context.Background()
-
 	go endlessFetching(ctx)
 
 	srv := &http.Server{
@@ -90,6 +99,19 @@ func main() {
 		Handler: router,
 	}
 
-	log.Printf("Serving on port: %v...\n\n\n\n", port)
+	log.Printf("Serving on port: %v...\n\n\n", port)
+
+	c := make(chan os.Signal, 1)
+
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	go func() {
+		<-c
+		log.Println("Received interrupt signal. Shutting down gracefully...")
+		srvErr := srv.Shutdown(shutdownCtx)
+		if srvErr != nil {
+			log.Printf("Error shutting down server -> %v\n", srvErr)
+		}
+	}()
 	log.Fatal(srv.ListenAndServe())
 }

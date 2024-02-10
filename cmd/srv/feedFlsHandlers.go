@@ -22,25 +22,17 @@ func feedFlPostHandler(w http.ResponseWriter, r *http.Request) {
 		db = apiCfg.DB
 		// struct to decode the http request's body
 		feedFlPostReq = decodeFeedFlPost{}
-		apiKey        string
+		user          database.User
 	)
 
-	apiKey, err := GetApiKeyFromHeader(r)
-	if err != nil {
-		log.Println("Error getting token from header on feedFlPostHandler func -> %v\n", err)
-		jsongenerics.RespondWithError(w, 400, err.Error())
+	userPtr, ok := r.Context().Value("user").(*database.User)
+	if !ok {
+		jsongenerics.RespondWithError(w, 400, "Unauthorized access")
 		return
 	}
+	user = *userPtr
 
-	err = jsongenerics.DecodeJson(r.Body, &feedFlPostReq)
-	if err != nil {
-		log.Printf(
-			"Error decoding json in feedFlPostHandler func --> %v\n",
-			err,
-		)
-	}
-
-	userID, err := db.GetIdByApiKey(r.Context(), apiKey)
+	err := jsongenerics.DecodeJson(r.Body, &feedFlPostReq)
 	if err != nil {
 		log.Printf(
 			"Error decoding json in feedFlPostHandler func --> %v\n",
@@ -53,7 +45,7 @@ func feedFlPostHandler(w http.ResponseWriter, r *http.Request) {
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
 		FeedID:    feedFlPostReq.FeedId,
-		UserID:    userID,
+		UserID:    user.ID,
 	}
 
 	feedFollow, err := db.CreateFeedFollow(r.Context(), arg)
@@ -72,8 +64,17 @@ func feedFlDeleteHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Print("\n\n\n")
 	log.Println("RUNNING feedFlDeleteHandler...")
 
-	// hold the database connection
-	db := apiCfg.DB
+	var (
+		db   *database.Queries = apiCfg.DB
+		user database.User
+	)
+
+	userPtr, ok := r.Context().Value("user").(*database.User)
+	if !ok {
+		jsongenerics.RespondWithError(w, 400, "Unauthorized access")
+		return
+	}
+	user = *userPtr
 
 	feedFlId := chi.URLParam(r, "*")
 	if feedFlId == "" {
@@ -87,7 +88,12 @@ func feedFlDeleteHandler(w http.ResponseWriter, r *http.Request) {
 
 	log.Printf("feedFlId <%v>\n", uuid)
 
-	err := db.DeleteFeedFollow(r.Context(), uuid)
+	args := database.DeleteFeedFollowParams{
+		ID:     uuid,
+		UserID: user.ID,
+	}
+
+	err := db.DeleteFeedFollow(r.Context(), args)
 	if err != nil {
 		log.Printf(
 			"Error deleting feed follow in feedFlDeleteHandler func --> %v\n",
@@ -102,28 +108,19 @@ func feedsGetByUserHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Print("\n\n\n")
 	log.Println("RUNNING feedsGetAllByUserHandler...")
 
-	db := apiCfg.DB
-	apiKey, err := GetApiKeyFromHeader(r)
-	if err != nil {
-		log.Printf(
-			"Error getting token from header in feedsGetAllByUserHandler func --> %v\n",
-			err,
-		)
-		jsongenerics.RespondWithError(w, 400, err.Error())
+	var (
+		db   *database.Queries = apiCfg.DB
+		user database.User
+	)
+
+	userPtr, ok := r.Context().Value("user").(*database.User)
+	if !ok {
+		jsongenerics.RespondWithError(w, 400, "Unauthorized access")
 		return
 	}
+	user = *userPtr
 
-	userID, err := db.GetIdByApiKey(r.Context(), apiKey)
-	if err != nil {
-		log.Printf(
-			"Error getting user id from api key in feedsGetAllByUserHandler func --> %v\n",
-			err,
-		)
-		jsongenerics.RespondWithError(w, 400, err.Error())
-		return
-	}
-
-	feedSlice, err := db.GetFeedFollowsByUser(r.Context(), userID)
+	feedSlice, err := db.GetFeedFollowsByUser(r.Context(), user.ID)
 	if err != nil {
 		log.Printf(
 			"Error getting feeds by user id in feedsGetAllByUserHandler func --> %v\n",

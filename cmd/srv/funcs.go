@@ -29,6 +29,31 @@ import (
 	"github.com/zspekt/rssAggregator/internal/xmldecoding"
 )
 
+func authWithApiKey(r *http.Request) (*database.User, error) {
+	fmt.Print("\n\n\n")
+	log.Println("Authenticating with api key...")
+
+	var (
+		db   database.Queries = *apiCfg.DB
+		user database.User    = database.User{}
+	)
+
+	apiKey, err := GetApiKeyFromHeader(r)
+	if err != nil {
+		log.Printf("Error getting token from header on authWithApiKey func -> %v\n", err)
+		return nil, err
+	}
+
+	user, err = db.GetAllByApiKey(r.Context(), apiKey)
+	if err != nil {
+		log.Printf("Error getting user by api key -> %v\n", err)
+		return nil, err
+	}
+
+	log.Printf("Auth of User <%v> with ID <%v> successful\n", user.Name, user.ID)
+	return &user, nil
+}
+
 func GetApiKeyFromHeader(r *http.Request) (string, error) {
 	apiKey := r.Header.Get("Authorization")
 	if apiKey == "" {
@@ -100,7 +125,12 @@ func processRss(feed database.Feed, wg *sync.WaitGroup) error {
 		LastFetchedAt: time1,
 		ID:            feed.ID,
 	}
-	db.MarkFeedFetched(context.Background(), arg)
+
+	err = db.MarkFeedFetched(context.Background(), arg)
+	if err != nil {
+		log.Printf("Error marking feed as fetched -> %v\n", err)
+		return err
+	}
 
 	// initializing some args for the creation of the post
 	var (
@@ -140,25 +170,6 @@ func processRss(feed database.Feed, wg *sync.WaitGroup) error {
 
 		db.CreatePost(context.Background(), arg2)
 	}
-
-	// arg = database.CreatePostParams{
-	// 	ID:          uuid.New(),
-	// 	CreatedAt:   time.Now(),
-	// 	Title:
-	// 	Url:         "",
-	// 	Description: sql.NullString{},
-	// 	PublishedAt: time.Time{},
-	// 	FeedID:      [16]byte{},
-	// }
-
-	// Item          []struct {
-	// 	Text        string `xml:",chardata"`
-	// 	Title       string `xml:"title"`
-	// 	Link        string `xml:"link"`
-	// 	PubDate     string `xml:"pubDate"`
-	// 	Guid        string `xml:"guid"`
-	// 	Description string `xml:"description"`
-	// } `xml:"item"`
 
 	log.Printf("RSS <%v>\n", rssStruct.Channel.Title)
 	log.Println("Go routine finished...")
@@ -201,55 +212,3 @@ func endlessFetching(context context.Context) {
 		}
 	}
 }
-
-/*
-
-
-
-
-	// one function fetches, hits another functions channel telling it to look
-	// into a certain var to get the urls
-	// then the third function's channel is hit to process the rss feeds
-
-
-
-
-
-
-
-
-
-
-
-
-
-*/
-
-// interval is passed to the NewCache() fn – which i haven't written yet
-// this func is the called by NewCache()
-
-//   // one function fetches, hits another functions channel telling it to look
-//   // into a certain var to get the urls
-//   // then the third function's channel is hit to process the rss feeds
-
-// first function is the ticker. every 60 seconds, will talk to th
-
-func processFeed() {
-}
-
-/*
-
-
-
-
-
-
-
-
-
-
-
-
-
-
- */

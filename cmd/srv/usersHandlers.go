@@ -51,27 +51,15 @@ func usersGetByApiKey(w http.ResponseWriter, r *http.Request) {
 	fmt.Print("\n\n\n")
 	log.Println("RUNNING usersGetByApiKey...")
 
-	var (
-		// hold the database connection
-		db = apiCfg.DB
-		// apiKey pulled from headers
-		apiKey string
-		// will be sent back to the client
-		userResp database.User
-	)
+	// will be sent back to the client
+	var userResp database.User
 
-	apiKey, err := GetApiKeyFromHeader(r)
-	if err != nil {
-		log.Println("Error getting token from header on usersGetByApiKey func -> %v\n", err)
-		jsongenerics.RespondWithError(w, 400, err.Error())
+	userPtr, ok := r.Context().Value("user").(*database.User)
+	if !ok {
+		jsongenerics.RespondWithError(w, 400, "Unauthorized access")
 		return
 	}
-
-	userResp, err = db.GetAllByApiKey(r.Context(), apiKey)
-	if err != nil {
-		log.Fatalf("DB error on usersGetByApiKey while trying to select user -> %v\n", err)
-		return
-	}
+	userResp = *userPtr
 
 	jsongenerics.RespondWithJSON(w, 200, userResp)
 }

@@ -1,14 +1,11 @@
 /*
-current possible bug:
-  there is nothing preventing multiple bad urls from flooding the db.
-  considering we only fetch a predetemined amount of feeds at once, and nulls
-  come first, with enough of these bad rss feeds, it would really slow down the
-  fetching, even to a halt, given enough feeds.
 
-fix part 1: regexp to make sure at least the format of the url is valid
+fixes:
 
-    part 2: new columns on database. 1 to track the amount of times we have been
-            unable to fetch them,    1 to flag it after a certain amount of tries
+-- DONE make sure at least the format of the url is valid DONE
+
+-- new columns on database. 1 to track the amount of times we have been
+   unable to fetch a feed,  1 to flag it after a certain amount of tries
 */
 
 package main
